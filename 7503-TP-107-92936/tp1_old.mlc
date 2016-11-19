@@ -1,0 +1,426 @@
+PROGRAM		SUBENTRY BASES=(2,3)
+
+**********************************************************************
+**********************************************************************
+*							 	TP N°7								 *
+**********************************************************************
+**********************************************************************
+
+INICIO		WTO 	' __________________________________ '
+			WTO 	'|************* TP N7 **************|'
+			WTO 	'|         CIFRADO PLAYFAIR         |'
+			WTO 	'|                                  |'
+			WTO 	'|  1. Codificar mensaje            |'
+			WTO 	'|  2. Ingresar matriz              |'
+			WTO 	'|  3. Mostrar matriz               |'
+			WTO 	'|  4. Mensaje codificado           |'
+			WTO 	'|  0. Salir                        |'
+			WTO 	'|__________________________________|'
+			WTOR	'Ingresar opcion:',OPCION,,WAITECB
+			WAIT 	ECB=WAITECB
+
+			CLI 	OPCION,C'1'
+			BE 		INGMENSJ
+			CLI 	OPCION,C'2'
+			BE 		INGMATRZ
+			CLI 	OPCION,C'3'
+			BE 		VOLVER
+			CLI 	OPCION,C'4'
+			BE 		INGCODIF
+			CLI 	OPCION,C'0'
+			BE 		FIN
+			B 		INICIO
+
+VOLVER		BAL		12,MOSTRAR
+			B 		INICIO
+FIN			SUBEXIT
+
+
+**********************************************************************
+INGMENSJ 	MVI 	ENCODE,C'N'
+			B 		CODMENSJ
+
+INGCODIF 	MVI 	ENCODE,C'Y'
+			B 		CODMENSJ
+
+**********************************************************************
+CODMENSJ	WTO		'CODIFICAR MENSAJE'
+			WTO		'[Hasta 20 letras. Omitir J]'
+			
+			BAL 	12,RESETMEN
+			WTOR	'Mensaje: ',MENSAJE,,WAITECB
+			WAIT 	ECB=WAITECB
+
+			BAL		12,VALIDLET
+			BAL 	12,VALIDPAR
+
+************
+			CLI 	VALIDOMX,C'N'
+			BE 		ERRORCOD
+
+			BAL 	12,RESETCOD
+			LA 		8,MCIFRADO
+			LA 		9,MENSAJE
+			LA 		10,10
+
+INICOD		CLI 	0(9),C' '
+			BNE 	SIGOPARC
+			B 		CHECPARC
+SIGOPARC	CLI 	1(9),C' '
+			BNE 	COMPAROC
+			MVI 	1(9),C'X'
+
+COMPAROC	BAL 	12,PROCCOO1
+			ZAP 	FILAUX1,FILA
+			ZAP		COLAUX1,COLUMNA
+			BAL 	12,PROCCOO2
+			ZAP 	FILAUX2,FILA
+			ZAP		COLAUX2,COLUMNA
+
+			BAL 	12,PROCCODE
+			LA		9,2(9)
+			BCT		10,INICOD
+
+FINCODE		BAL 	12,MOSTCODE
+FINMENSJ	B 		VOLVER
+
+CHECPARC 	CLI 	1(9),C' '
+			BE 		FINCODE
+			MVI 	0(9),C'X'
+			B 		SIGOPARC
+
+**********************************************************************
+INGMATRZ	WTO 	'INGRESAR MATRIZ 5x5'
+			WTO 	'[5 letras por fila de A..Z, omitiendo la J]'
+
+			LA 		10,5
+			ZAP		FILA,=P'0'
+			ZAP 	COLUMNA,=P'0'
+
+INGFILA		WTOR 	'Ingresar fila: ',FILAWTO,,WAITECB
+			WAIT 	ECB=WAITECB
+
+			BAL 	12,VALIDFIL
+			BAL 	12,COPIFILA
+
+			AP 		FILA,=P'1'
+			BCT 	10,INGFILA
+			MVI		VALIDOMX,C'Y'
+FINMATRZ	B 		VOLVER
+
+
+**********************************************************************
+**********************************************************************
+*							 SUBRUTINAS								 *
+**********************************************************************
+**********************************************************************
+
+*Valida que sean solo letras de A..Z omitiendo la J
+VALIDLET 	LA 		4,LETRAS
+			LA 		5,MENSAJE
+			LA 		6,20
+			LA 		7,26
+COMPAROL	CLC 	0(1,4),0(5)
+			BE 		ESLETRA
+			LA		4,1(4)
+			BCT		7,COMPAROL
+			B 		NOESLETR
+ESLETRA		LA 		5,1(5)
+			LA 		4,LETRAS
+			LA 		7,26
+			BCT 	6,COMPAROL
+			BR 		12
+
+NOESLETR	WTO 	'__________________________________________'
+			WTO 	'ERROR: INGRESE LETRAS DE A..Z OMITIENDO J!'
+			MVI 	VALIDO,C'N'
+			B 		FINMENSJ
+
+*Procesa mensaje y valida que no haya 2 letras contiguas iguales
+VALIDPAR 	LA 		4,MENSAJE
+			LA 		6,10
+
+INIPAR		CLI 	0(4),C' '
+			BNE 	SIGOPAR
+			B 		CHECPARP
+SIGOPAR		CLI 	1(4),C' '
+			BNE 	COMPAROP
+			MVI 	1(4),C'X'
+
+COMPAROP	CLC 	0(1,4),1(4)
+			BE 		DOSIGUAL
+			LA		4,2(4)
+			BCT		6,INIPAR
+FINVALP		BR 		12
+
+DOSIGUAL	WTO 	'__________________________________________'
+			WTO 	'ERROR: 2 LETRAS IGUALES CONTIGUAS!        '
+			MVI 	VALIDO,C'N'
+			B 		FINMENSJ
+
+CHECPARP 	CLI 	1(4),C' '
+			BE 		FINVALP
+			MVI 	0(4),C'X'
+			B 		SIGOPAR
+
+RESETMEN 	LA 		4,MENSAJE
+			MVC 	0(20,4),=CL20' '
+			BR 		12
+
+**********************************************************************
+*Valida que la fila sea solo letras de A..Z omitiendo la J
+VALIDFIL 	LA 		4,LETRAS
+			LA 		5,FILAWTO
+			LA 		6,5
+			LA 		7,25
+COMPAROF	CLC 	0(1,4),0(5)
+			BE 		ESLETRAF
+			LA		4,1(4)
+			BCT		7,COMPAROF
+			B 		NOESLETF
+ESLETRAF	LA 		5,1(5)
+			LA 		4,LETRAS
+			LA 		7,25
+			BCT 	6,COMPAROF
+			BR 		12
+
+NOESLETF	WTO 	'__________________________________________'
+			WTO 	'ERROR: INGRESE LETRAS DE A..Z OMITIENDO J!'
+			MVI 	VALIDO,C'N'
+			MVI 	VALIDOMX,C'N'
+			B 		FINMATRZ
+
+*Copia la fila ingresada en la matriz
+COPIFILA	BAL 	11,UBICAR
+			MVC 	0(5,4),FILAWTO
+			BR 		12
+
+**********************************************************************
+*Proceso de codificacion del par de letras
+PROCCOO1 	ZAP 	FILA,=P'0'
+OTRAFIL1	ZAP 	COLUMNA,=P'0'
+
+OTRACOL1	BAL		11,UBICAR
+			CLC 	0(1,4),0(9)
+			BE 		FINCOOR1
+			AP 		COLUMNA,=P'1'
+			CP 		COLUMNA,=P'5'
+			BL 		OTRACOL1
+			
+			AP 		FILA,=P'1'
+			CP 	 	FILA,=P'5'
+			BL 		OTRAFIL1
+
+			B 		ERRORCOD
+FINCOOR1	BR 		12
+
+PROCCOO2 	ZAP 	FILA,=P'0'
+OTRAFIL2	ZAP 	COLUMNA,=P'0'
+
+OTRACOL2	BAL		11,UBICAR
+			CLC 	0(1,4),1(9)
+			BE 		FINCOOR2
+			AP 		COLUMNA,=P'1'
+			CP 		COLUMNA,=P'5'
+			BL 		OTRACOL2
+			
+			AP 		FILA,=P'1'
+			CP 	 	FILA,=P'5'
+			BL 		OTRAFIL2
+
+			B 		ERRORCOD
+FINCOOR2	BR 		12
+
+*Identifica que tipo de codificacion usar
+PROCCODE 	CLC 	FILAUX1,FILAUX2
+			BE 		PROCFILA
+			CLC 	COLAUX1,COLAUX2
+			BE 		PROCCOL
+
+			ZAP 	FILA,FILAUX1
+			ZAP 	COLUMNA,COLAUX2
+			BAL 	11,UBICAR
+			MVC 	0(1,8),0(4)
+			LA 		8,1(8)
+			ZAP 	FILA,FILAUX2
+			ZAP 	COLUMNA,COLAUX1
+			BAL 	11,UBICAR
+			MVC 	0(1,8),0(4)
+			LA 		8,1(8)
+FINPROCC	BR 		12
+
+*Proceso cuando coinciden las filas
+PROCFILA	ZAP 	FILA,FILAUX1
+			ZAP 	COLUMNA,COLAUX1
+			CLI 	ENCODE,C'Y'
+			BE 		ENCOFIL1
+			AP 		FILA,=P'1'
+			CP 	 	FILA,=P'4'
+			BH 		NEWFIL1
+SIGOFIL1	BAL 	11,UBICAR
+			MVC 	0(1,8),0(4)
+			LA 		8,1(8)
+
+			ZAP 	FILA,FILAUX2
+			ZAP 	COLUMNA,COLAUX2
+			CLI 	ENCODE,C'Y'
+			BE 		ENCOFIL2
+			AP 		FILA,=P'1'
+			CP 	 	FILA,=P'4'
+			BH 		NEWFIL2
+SIGOFIL2	BAL 	11,UBICAR
+			MVC 	0(1,8),0(4)
+			LA 		8,1(8)
+			B 		FINPROCC
+
+ENCOFIL1 	SP 		FILA,=P'1'
+			CP 	 	FILA,=P'-1'
+			BH 		SIGOFIL1
+			ZAP 	FILA,=P'4'
+			B 		SIGOFIL1
+
+ENCOFIL2 	SP 		FILA,=P'1'
+			CP 	 	FILA,=P'-1'
+			BH 		SIGOFIL2
+			ZAP 	FILA,=P'4'
+			B 		SIGOFIL2
+
+NEWFIL1 	ZAP 	FILA,=P'0'
+			B 		SIGOFIL1
+NEWFIL2 	ZAP 	FILA,=P'0'
+			B 		SIGOFIL2
+
+*Proceso cuando coinciden las columnas
+PROCCOL		ZAP 	FILA,FILAUX1
+			ZAP 	COLUMNA,COLAUX1
+			CLI 	ENCODE,C'Y'
+			BE 		ENCOCOL1
+			AP 		COLUMNA,=P'1'
+			CP 	 	COLUMNA,=P'4'
+			BH 		NEWCOL1
+SIGOCOL1	BAL 	11,UBICAR
+			MVC 	0(1,8),0(4)
+			LA 		8,1(8)
+
+			ZAP 	FILA,FILAUX2
+			ZAP 	COLUMNA,COLAUX2
+			CLI 	ENCODE,C'Y'
+			BE 		ENCOCOL2
+			AP 		COLUMNA,=P'1'
+			CP 	 	COLUMNA,=P'4'
+			BH 		NEWCOL2
+SIGOCOL2	BAL 	11,UBICAR
+			MVC 	0(1,8),0(4)
+			LA 		8,1(8)
+			B 		FINPROCC
+
+ENCOCOL1 	SP 		COLUMNA,=P'1'
+			CP 	 	COLUMNA,=P'-1'
+			BH 		SIGOCOL1
+			ZAP 	FILA,=P'4'
+			B 		SIGOCOL1
+
+ENCOCOL2 	SP 		COLUMNA,=P'1'
+			CP 	 	COLUMNA,=P'-1'
+			BH 		SIGOCOL2
+			ZAP 	FILA,=P'4'
+			B 		SIGOCOL2
+
+NEWCOL1 	ZAP 	COLUMNA,=P'0'
+			B 		SIGOCOL1
+NEWCOL2 	ZAP 	COLUMNA,=P'0'
+			B 		SIGOCOL2
+
+
+ERRORCOD	WTO 	'__________________________________________'
+			WTO 	'ERROR: MENSAJE O MATRIZ INVALIDO!'
+			B 		FINMENSJ
+
+RESETCOD 	LA 		4,MCIFRADO
+			MVC 	0(20,4),=CL20' '
+			BR 		12
+
+**********************************************************************
+*Guarda en R4 la direccion de la ubicacion segun fila y columna
+UBICAR	 	LA		4,MATRIZ
+			ZAP		DOBLE,FILA
+			MP 		DOBLE,=P'5'
+			CVB		5,DOBLE
+			AR 		4,5
+
+			ZAP		DOBLE,COLUMNA
+			MP 		DOBLE,=P'1'
+			CVB		5,DOBLE
+			AR 		4,5
+			BR		11
+
+*Muestra la matriz por pantalla
+MOSTRAR		LA		4,MATRIZ
+			LA 		6,NUMEROS
+			LA 		7,WTOLINEA
+			LA		8,5
+			LA 		9,5
+			MVC 	0(20,7),=CL20' '
+			WTO 	'_________________'
+			WTO 	'   1  2  3  4  5  '
+OTRALINE	MVC		WTOLINEA(1),0(6)
+			LA 		7,3(7)
+OTRACEL		MVC		0(1,7),0(4)
+			LA 		7,3(7)
+			LA 		4,1(4)
+			BCT 	8,OTRACEL
+
+			WTO 	MF=(E,WTOBLOCK)
+			LA 		6,1(6)
+			LA 		7,WTOLINEA
+			LA 		8,5
+			BCT		9,OTRALINE
+			BR		12
+
+*Muestra el mensaje codificado
+MOSTCODE 	LA 		4,MENSAJE
+			LA 		5,MCIFRADO
+			LA 		7,WTOLINEA
+			WTO 	'Mensaje Original: '
+			MVC		0(20,7),0(4)
+			WTO 	MF=(E,WTOBLOCK)
+			WTO 	'Mensaje Cifrado:  '
+			MVC		0(20,7),0(5)
+			WTO 	MF=(E,WTOBLOCK)
+			BR 		12
+
+**********************************************************************
+**********************************************************************
+*							  VARIABLES								 *
+**********************************************************************
+**********************************************************************
+MATRIZ		DC		5CL5''
+MENSAJE		DC		CL20''
+MCIFRADO 	DC 		CL20''
+LETRAS 		DC		C'ABCDEFGHIKLMNOPQRSTUVWXYZ '
+
+VALIDO	 	DS 		CL1
+VALIDOMX	DS 		CL1
+ENCODE		DS 		CL1
+
+**********************************************************************
+DOBLE		DS		D 			*Aux para multiplicar y dividir
+FILA 		DS 		PL1
+COLUMNA 	DS 		PL1
+FILAUX1		DS 		PL1			*Aux para codificar
+COLAUX1		DS 		PL1
+FILAUX2		DS 		PL1
+COLAUX2		DS 		PL1
+
+**********************************************************************
+OPCION 		DS 		CL1
+FILAWTO 	DC		CL5''
+
+NUMEROS		DC		C'123456789'
+WAITECB 	DC		F'0'
+
+WTOBLOCK	DC		H'24'
+			DC		H'0'
+WTOLINEA	DC		CL20''
+
+			END
