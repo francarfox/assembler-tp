@@ -106,8 +106,8 @@ OPCION3
 *recorro todos los tramos ingresados
 			AP 		INDEXS,=P'1'
 			LA 		4,SECTIONS
-			LA		11,COUNTSEC
-FORSECT		BAL 	12,GETSECT
+			LA		11,SECCOUNT
+FORSECT		
 			CLI 	ISINLINE,C'F'
 			ZAP 	REMCOUNT,=P'0'
 
@@ -115,9 +115,8 @@ FORSECT		BAL 	12,GETSECT
 **recorro todas las lineas
 			ZAP 	INDEXL,=P'0'
 			LA 		5,LINES
-			LA 		10,COUNTLIN	
-FORLINES	BAL 	12,GETLINE
-
+			LA 		10,LINCOUNT	
+FORLINES	
 ***si la primer estacion esta en linea, agrego la segunda
 			LA 		8,0(4)
 			BAL 	12,CONTAIN
@@ -148,9 +147,8 @@ JUMP2		LA		5,9(5)
 **remuevo lineas ya mergeadas
 			ZAP 	INDEXR,=P'0'
 			LA 		5,REMOVEL
-		 	LA 		10,COUNTREM
-FORREMOV	BAL 	12,GETREMOV
-
+		 	LA 		10,REMCOUNT
+FORREMOV	
 			LA		5,1(5)
 			AP 		INDEXR,=P'1'
 			BCT 	10,FORREMOV
@@ -222,7 +220,7 @@ LOOPLINE	LA 		4,1(4)
 			BR 		12
 
 *Agrega una estacion a una linea
-*Params: STATION, INDEXL linea
+*Params: R8 station, INDEXL linea
 ADDSTATN 	LA 		4,LINES
 			ZAP		DOBLE,INDEXL
 			MP 		DOBLE,=P'9'
@@ -234,9 +232,9 @@ ADDSTATN 	LA 		4,LINES
 			CVB 	5,DOBLE
 			AR 		7,5
 
-LOOPLINE	LA 		4,1(4)
-			BCT 	7,LOOPLINE
-			MVC 	0(1,4),STATION
+LOOPLIN2	LA 		4,1(4)
+			BCT 	7,LOOPLIN2
+			MVC 	0(1,4),0(8)
 			BR 		12
 
 			
@@ -274,7 +272,7 @@ ACTION 		MVI 	EQUALINX,C'F'
 **recorro todas las lineas
 			ZAP 	INDEXL,=P'0'
 			LA 		5,LINES
-			LA 		10,COUNTLIN
+			LA 		10,LINCOUNT
 FORLINES	BAL 	12,CONTAIN
 			CLI 	RESULT,C'F'
 			BE 		JUMP3
@@ -341,32 +339,31 @@ MOSTCODE 	LA 		4,MENSAJE
 **********************************************************************
 **********************************************************************
 CANTWTO	 	DC 		CL1''
+SECTWTO 	DC 		CL3''
+
 STATIONS 	DS 		PL1
 SECTIONS 	DC 		9CL2''
 LINES 		DC 		9CL9''
+LINESIZE 	DS 		9PL1	
 REMOVEL 	DC 		9PL1
 
 SECCOUNT 	DC 		PL1'0'
 LINCOUNT 	DC 		PL1'0'
 REMCOUNT 	DC 		PL1'0'
 
+STATION1 	DS 		PL1
+STATION2 	DS 		PL1
 
-MENSAJE		DC		CL5''
-MATRIZ		DC		5CL5''
-MCIFRADO 	DC 		CL20''
-
-VALIDO	 	DS 		CL1
-VALIDOMX	DS 		CL1
-ENCODE		DS 		CL1
+ISINLINE	DS 		CL1
+RESULT 		DS 		CL1
+EQUALINX 	DS 		CL1
 
 **********************************************************************
 DOBLE		DS		D 			*Aux para multiplicar y dividir
-FILA 		DS 		PL1
-COLUMNA 	DS 		PL1
-FILAUX1		DS 		PL1			*Aux para codificar
-COLAUX1		DS 		PL1
-FILAUX2		DS 		PL1
-COLAUX2		DS 		PL1
+INDEXS 		DS 		PL1
+INDEXL	 	DS 		PL1
+INDEXR		DS 		PL1
+AUXIND		DS 		PL1 		*Aux para guardar INDEXL
 
 **********************************************************************
 OPCION 		DS 		CL1
