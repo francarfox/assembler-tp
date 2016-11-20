@@ -8,13 +8,13 @@ PROGRAM		SUBENTRY BASES=(2,3)
 
 INICIO		WTO 	' __________________________________ '
 			WTO 	'|************ TP N107 *************|'
-			WTO 	'|     Lineas ferroviarias Light    |'
+			WTO 	'|    Lineas ferroviarias Light     |'
 			WTO 	'|                                  |'
-			WTO 	'|  1. Ingresar cantidad estaciones |'
-			WTO 	'|  2. Agregar tramos               |'
-			WTO 	'|  3. Agrupar estaciones en lineas |'
-			WTO 	'|  4. Listar lineas                |'
-			WTO 	'|  0. Salir                        |'
+			WTO 	'| 1. Ingresar cantidad estaciones  |'
+			WTO 	'| 2. Agregar tramos                |'
+			WTO 	'| 3. Agrupar estaciones en lineas  |'
+			WTO 	'| 4. Listar lineas                 |'
+			WTO 	'| 0. Salir                         |'
 			WTO 	'|__________________________________|'
 			WTOR	'Ingresar opcion:',OPCION,,WAITECB
 			WAIT 	ECB=WAITECB
@@ -36,7 +36,7 @@ FIN			SUBEXIT
 
 **********************************************************************
 OPCION1 	WTO 	'INGRESAR CANTIDAD DE ESTACIONES [9 max]'
-			WTOR	'Cantidad: ',CANTWTO,,WAITECB
+			WTOR	'Estaciones: ',CANTWTO,,WAITECB
 			WAIT 	ECB=WAITECB
 
 			ZAP 	STATIONS,=P'0'
@@ -57,11 +57,14 @@ ESNUMER1 	B 		VOLVER
 
 
 **********************************************************************
-OPCION2		WTO 	'AGREGAR TRAMOS [20 max] Ejm: 1,2'
-INGTRAMO	WTOR 	'Tramo: ',SECTWTO,,WAITECB
+OPCION2		WTO 	'AGREGAR TRAMOS [Finaliza con *]'
+INGTRAMO	WTOR 	'Ejm: 1,2',SECTWTO,,WAITECB
 			WAIT 	ECB=WAITECB
 
-			ZAP 	STATION1,=P'0'
+			CLI 	SECTWTO,C'*'
+			BE 		VOLVER
+
+INGSECT		ZAP 	STATION1,=P'0'
 			LA 		4,NUMEROS
 			LA 		5,SECTWTO
 			LA 		6,4
@@ -92,7 +95,7 @@ COMPARO3	CLC 	2(1,4),0(5)
 			B 		OPCION2
 
 ESNUMER3 	BAL 	12,ADDDATA
-			B 		VOLVER
+			B 		INGSECT
 
 
 **********************************************************************
@@ -276,7 +279,7 @@ FORLINE2	BAL 	12,CONTAIN
 			BE 		JUMP3
 			CLC 	INDEXL,AUXIND
 			BE 		JUMP4
-			....
+*....
 
 JUMP4 		MVI 	EQUALINX,C'T'
 JUMP3		BCT 	10,FORLINE2
