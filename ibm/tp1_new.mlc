@@ -97,9 +97,8 @@ ESNUMER3 	BAL 	12,ADDDATA
 
 **********************************************************************
 *Agrupa estaciones en lineas
-OPCION3 	
 *agrego linea inicial
-			ZAP 	INDEXS,=P'0'
+OPCION3 	ZAP 	INDEXS,=P'0'
 			ZAP 	INDEXL,=P'0'
 			BAL 	12,ADDSECTN
 
@@ -107,8 +106,8 @@ OPCION3
 			AP 		INDEXS,=P'1'
 			LA 		4,SECTIONS
 			LA		11,SECCOUNT
-FORSECT		
-			CLI 	ISINLINE,C'F'
+		
+FORSECT		CLI 	ISINLINE,C'F'
 			ZAP 	REMCOUNT,=P'0'
 
 
@@ -116,9 +115,9 @@ FORSECT
 			ZAP 	INDEXL,=P'0'
 			LA 		5,LINES
 			LA 		10,LINCOUNT	
-FORLINES	
+	
 ***si la primer estacion esta en linea, agrego la segunda
-			LA 		8,0(4)
+FORLINES	LA 		8,0(4)
 			BAL 	12,CONTAIN
 			CLI 	RESULT,C'F'
 			BE 		JUMP
@@ -148,8 +147,8 @@ JUMP2		LA		5,9(5)
 			ZAP 	INDEXR,=P'0'
 			LA 		5,REMOVEL
 		 	LA 		10,REMCOUNT
-FORREMOV	
-			LA		5,1(5)
+	
+FORREMOV	LA		5,1(5)
 			AP 		INDEXR,=P'1'
 			BCT 	10,FORREMOV
 
@@ -169,8 +168,7 @@ FINFORSC	BCT 	11,FORSECT
 			B 		VOLVER
 
 **********************************************************************
-OPCION4 	BAL 	12,LISTAR
-			B 		VOLVER
+OPCION4 	B 		VOLVER
 
 
 **********************************************************************
@@ -280,7 +278,7 @@ FORLINES	BAL 	12,CONTAIN
 			BE 		JUMP4
 			....
 
-JUMP4 		MVI 	EQUALINX,"T"
+JUMP4 		MVI 	EQUALINX,C'T'
 JUMP3		BCT 	10,FORLINES
 
 			CP 		REMCOUNT,=P'0'
@@ -292,15 +290,14 @@ JUMP3		BCT 	10,FORLINES
 			BAL 	12,ADDSECTN
 
 FINACTN		ZAP 	INDEXL,AUXIND
-			MVI 	ISINLINE,"T"
+			MVI 	ISINLINE,C'T'
 			BR 		11
 
 
 
 
 *Muestra la matriz por pantalla
-MOSTRAR		LA		4,MATRIZ
-			LA 		6,NUMEROS
+MOSTRAR		LA 		6,NUMEROS
 			LA 		7,WTOLINEA
 			LA		8,5
 			LA 		9,5
@@ -318,18 +315,13 @@ OTRACEL		MVC		0(1,7),0(4)
 			LA 		6,1(6)
 			LA 		7,WTOLINEA
 			LA 		8,5
-			BCT		9,OTRALINE
 			BR		12
 
 *Muestra el mensaje codificado
-MOSTCODE 	LA 		4,MENSAJE
-			LA 		5,MCIFRADO
+MOSTCODE 	LA 		4,NUMEROS
 			LA 		7,WTOLINEA
 			WTO 	'Mensaje Original: '
 			MVC		0(20,7),0(4)
-			WTO 	MF=(E,WTOBLOCK)
-			WTO 	'Mensaje Cifrado:  '
-			MVC		0(20,7),0(5)
 			WTO 	MF=(E,WTOBLOCK)
 			BR 		12
 
