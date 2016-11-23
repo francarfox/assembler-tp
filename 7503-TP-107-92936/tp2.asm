@@ -8,17 +8,14 @@ segment pila stack
 
 segment datos data
 	filename db	'datafile.dat',0
-	registro dw 1
-	vector	times 60 db ' '
-	fila	db	1
-	totalnum db 1
+	registro db 2
+	vector	resb 60
 	limit 	db  1
-	indexi 	db	1 	
-	indexj	db	1
-	indexp	db	1
+	aux 	db 	1
 	buffer 	dw 	1
+	buffer2 resb 10
 	num 	resb 1
-	handle  dw  1
+	handle  resb 10
 	ascend 	db  1
 
 	salto	db	10,13,'$'
@@ -39,7 +36,6 @@ segment codigo code
 
 inicio:
 	call saltoLinea
-	call imprimirLinea
 	mov dx,msgIni
 	call ingresoOp
 	call saltoLinea
@@ -58,15 +54,29 @@ fin:
 	mov	ah,4ch
 	int	21h
 
+;hardcode
+	lea si,[vector]
+	mov word[si],0077h
+	add si,2
+	mov word[si],0014h
+	add si,2
+	mov word[si],0015h
+	add si,2
+	mov word[si],0001h
+	add si,2
+	mov word[si],000ah
+	jmp mostrar
+
 ;---------------------------------------------------------------------
-leerarch:        
+leerarch:
+	mov byte[limit],0
 	mov al,0
 	mov dx,filename
 	mov ah,3dh
 	int 21h
 	jc  erropen
 	mov [handle],ax
-	mov byte[fila],0
+	mov	si,0
 
 lectura:
 	mov bx,[handle]
@@ -76,13 +86,28 @@ lectura:
 	int 21h
 	jc  errlec
 	cmp ax,0
-	jne proceso
+	je finlect
 
-	mov word[totalnum],fila
+proceso:
+;mov word[registro],0077h
+	mov cx,[registro]
+	cmp cx,0077h
+	je sarasa
+	jmp continua
+sarasa:
+	call imprimirLinea
+continua:
+	mov word[vector+si],cx
+
+	add si,2
+	add byte[limit],2
+	jmp lectura
+
+finlect:
 	mov bx,[handle]
 	mov ah,3eh
 	int 21h
-	jmp inicio
+	jmp mostrar
 
 erropen:
 	mov dx,msgErr
@@ -94,92 +119,61 @@ errlec:
 	call imprimirMsg
 	jmp inicio
 
-proceso:
-	mov dx,registro
-	call imprimirMsg
-
-	mov si,[fila]
-	mov ax,registro
-	mov word[vector+si],ax
-
-	inc byte[fila]
-	jmp lectura
-
 ;---------------------------------------------------------------------
 ordenasc:
 	mov byte[ascend],'Y'
-ordendes:
-	mov ax,vector
-	mov byte[indexi],0
-	mov word[limit],totalnum
-	dec byte[limit]
-
-continuoi:
-	cmp word[indexi],limit
-	jl	procesord
-	jmp mostrar
+ordenar:
+	mov byte[aux],'N'
+	mov si,0
+	mov di,2
 
 procesord:
-	mov word[indexp],indexi			;p=i
-	mov word[indexj],indexi			;j=i+1
-	inc byte[indexj]
-continuoj:
-	cmp word[indexj],limit
-	jg 	finprocord
+	mov	ax,word[vector+si]
+	mov bx,word[vector+di]
 
 	cmp byte[ascend],'Y'
 	je 	funcasc
 	jne funcdesc
 
+
 funcasc:
-	mov si,[indexj]				;if(vector[j] < vector[p]) p = j;
-	mov	ax,word[vector+si]
-	mov si,[indexp]
-	mov	bx,word[vector+si]
 	cmp ax,bx
-	jl 	igualindex
-	inc byte[indexj]
-	jmp continuoj
+	jg signum2
+	cmp si,di
+	jg swaping
+	jmp signum2
 
 funcdesc:
-	mov si,[indexj]				;if(vector[j] > vector[p]) p = j;
-	mov	ax,word[vector+si]
-	mov si,[indexp]
-	mov	bx,word[vector+si]
 	cmp ax,bx
-	jg 	igualindex
-	inc byte[indexj]
-	jmp continuoj
+	jl signum2
+	cmp si,di
+	jg swaping
 
-igualindex:
-	mov word[indexp],indexj
-	inc byte[indexj]
-	jmp continuoj
+signum2:
+	add di,2
+	cmp di,60
+	je signum
+	jmp procesord
 
-finprocord:
-	;if(p != i)
-	cmp word[indexp],indexi
-	je 	finswap
+swaping:
+	mov cx,word[vector+si]
+	mov word[vector+si],bx
+	mov word[vector+di],cx
 
-	mov si,[indexp]				;swap
-	mov	ax,word[vector+si]
-	mov word[buffer],ax
+signum:
+	mov di,0	
+	add si,2
+	cmp si,60
+	je finord
+	jmp procesord
 
-	mov di,[indexi]
-	mov	ax,word[vector+di]
-	mov word[vector+si],ax
-
-	mov word[vector+di],buffer
-
-finswap:
-	inc byte[indexi]
-	jmp continuoi
-
+finord:
+	jmp mostrar
 
 ;---------------------------------------------------------------------
 ordendesc:
 	mov byte[ascend],'N'
-	jmp ordendes
+	jmp ordenar
 
 
 ;*********************************************************************
@@ -188,10 +182,43 @@ ordendesc:
 ;Muestra los elementos del vector de numeros
 mostrar:
 	call saltoLinea
-	mov dx,vector
-	call imprimirMsg
+	mov di,0
+exitlec:
+	mov byte[buffer2+9],'$'
+	lea si,[buffer2+9]
+	mov ax,[vector+di] 		;ax = value that I want to convert
+	mov bx,10
+
+	cmp ax,01h
+	jl 	negativo
+
+loop2:
+	mov dx,0
+	div bx
+	add dx,48
+	dec si
+	mov [si],dl
+	cmp ax,0
+	jz exitmost
+	jmp loop2
+exitmost:
+	cmp byte[si],'0'
+	je saltop 
+print:
+	mov ah,9
+	mov dx,si
+	int 21h
 	call saltoLinea
-	jmp inicio
+saltop:
+	add di,2
+	cmp di,60
+	je 	inicio
+	jmp exitlec
+
+negativo:
+	not ax
+	add ax,00000001b
+	jmp loop2
 
 ingresoOp:
 	call imprimirMsg
@@ -203,11 +230,6 @@ ingresoOp:
 ingresarChar:
 	mov	ah,1
 	int	21h
-	ret
-
-imprimirChar:
-	mov	ah,2
-	int 21h
 	ret
 
 imprimirMsg:

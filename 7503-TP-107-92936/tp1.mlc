@@ -1,0 +1,435 @@
+PROGRAM		SUBENTRY BASES=(2,3)
+
+**********************************************************************
+**********************************************************************
+*							 TP N°107								 *
+**********************************************************************
+**********************************************************************
+
+INICIO		WTO 	' __________________________________ '
+			WTO 	'|************ TP N107 *************|'
+			WTO 	'|    Lineas ferroviarias Light     |'
+			WTO 	'|                                  |'
+			WTO 	'| 1. Ingresar cantidad estaciones  |'
+			WTO 	'| 2. Agregar tramos                |'
+			WTO 	'| 3. Agrupar estaciones en lineas  |'
+			WTO 	'| 4. Listar lineas                 |'
+			WTO 	'| 0. Salir                         |'
+			WTO 	'|__________________________________|'
+			WTOR	'Ingresar opcion:',OPCION,,WAITECB
+			WAIT 	ECB=WAITECB
+
+			CLI 	OPCION,C'1'
+			BE 		OPCION1
+			CLI 	OPCION,C'2'
+			BE 		OPCION2
+			CLI 	OPCION,C'3'
+			BE 		OPCION3
+			CLI 	OPCION,C'4'
+			BE 		OPCION4
+			CLI 	OPCION,C'0'
+			BE 		FIN
+
+VOLVER		B 		INICIO
+FIN			SUBEXIT
+
+
+**********************************************************************
+OPCION1 	WTO 	'INGRESAR CANTIDAD DE ESTACIONES [9 max]'
+			WTOR	'Estaciones: ',CANTWTO,,WAITECB
+			WAIT 	ECB=WAITECB
+
+			ZAP 	STATIONS,=P'0'
+			LA 		4,NUMEROS
+			LA 		5,CANTWTO
+			LA 		6,4
+			LA 		7,9
+COMPARO1	CLC 	0(1,4),0(5)
+			BE 		ESNUMER1
+			LA		4,1(4)
+			AP 		STATIONS,=P'1'
+			BCT		7,COMPARO1
+
+		 	WTO 	'__________________________________________'
+			WTO 	'ERROR: La cantidad ingresada no es valida'
+			B 		OPCION1
+ESNUMER1 	B 		VOLVER
+
+
+**********************************************************************
+OPCION2		ZAP 	INDEXS,=P'0'
+			MVC 	SECTIONS,=CL18' '
+			WTO 	'AGREGAR TRAMOS [Finaliza con *] Ejm: 1,2'
+INGSECT 	WTOR 	'Tramo:',SECTWTO,,WAITECB
+			WAIT 	ECB=WAITECB
+
+			LA 		5,SECTWTO
+			CLI 	0(5),C'*'
+			BE 		VOLVER
+
+			LA 		4,NUMEROS
+			LA 		5,SECTWTO
+			LA 		6,9
+COMPARO2	CLC 	0(1,5),0(4)
+			BE 		ESNUMER2
+			LA		4,1(4)
+			BCT		6,COMPARO2
+
+		 	WTO 	'__________________________________________'
+			WTO 	'ERROR: La cantidad ingresada no es valida'
+			B 		INGSECT
+ 	
+ESNUMER2	MVC 	STATION1,0(5)
+			LA 		4,NUMEROS
+			LA 		5,SECTWTO
+			LA 		6,9
+COMPARO3	CLC 	2(1,5),0(4)
+			BE 		ESNUMER3
+			LA		4,1(4)
+			BCT		6,COMPARO3
+
+		 	WTO 	'__________________________________________'
+			WTO 	'ERROR: La cantidad ingresada no es valida'
+			B 		INGSECT
+
+ESNUMER3 	MVC 	STATION2,2(5)
+			BAL 	12,ADDDATA
+			B 		INGSECT
+
+
+**********************************************************************
+*Agrupa estaciones en lineas
+*agrego linea inicial
+OPCION3 	ZAP 	SECCOUNT,INDEXS
+			ZAP 	INDEXS,=P'0'
+			ZAP 	INDEXL,=P'0'
+			BAL 	12,ADDSECTN
+*recorro todos los tramos ingresados
+			AP 		INDEXS,=P'1'
+			AP 		LINCOUNT,=P'1'
+		
+FORSECT		MVI 	ISINLINE,C'F'
+
+**recorro todas las lineas
+			ZAP 	INDEXL,=P'0'
+	
+***si la primer estacion esta en linea, agrego la segunda
+FORLINES	BAL 	11,GETSECTN
+			LA 		8,0(4)
+			BAL 	12,CONTAIN
+			CLI 	RESULT,C'F'
+			BE 		JUMP
+			CLI 	ISINLINE,C'T'
+			BE 		JUMP
+			BAL 	11,GETSECTN
+			LA 		8,1(4)
+			BAL 	9,ACTION
+
+***si la segunda estacion esta en linea, agrego la primera
+JUMP		BAL 	11,GETSECTN
+			LA 		8,1(4)
+			BAL 	12,CONTAIN
+			CLI 	RESULT,C'F'
+			BE 		JUMP2
+			CLI 	ISINLINE,C'T'
+			BE 		JUMP2
+			BAL 	11,GETSECTN
+			LA 		8,0(4)
+			BAL 	9,ACTION
+
+JUMP2		AP 		INDEXL,=P'1'
+			CP 		INDEXL,LINCOUNT
+			BL		FORLINES
+
+**agrego nueva linea
+			CLI 	ISINLINE,C'T'
+			BE 		FINFORSC
+			ZAP 	INDEXL,LINCOUNT
+			BAL 	12,ADDSECTN
+			AP 		LINCOUNT,=P'1'
+
+FINFORSC	AP 		INDEXS,=P'1'
+			CP 		INDEXS,SECCOUNT
+			BL 		FORSECT
+
+*ordeno lineas
+ 			ZAP 	INDEXL,=P'0'
+
+OTRALIN2	LA 		4,LINES
+			ZAP		DOBLE,INDEXL
+			MP 		DOBLE,=P'9'
+			CVB 	5,DOBLE
+			AR 		4,5
+
+ 			LA 		12,9
+ 			LA 		11,LINEORD
+			LA 		10,NUMEROS
+			LA 		9,9
+
+FORNUM		CLC 	0(1,4),0(10)
+			BE 		AGREGAR
+			LA 		4,1(4)
+			BCT 	9,FORNUM
+			B 		SIGNUM
+
+AGREGAR		MVC 	0(1,11),0(10)
+			LA 		11,1(11)
+SIGNUM		LA 		10,1(10)
+			LA 		9,9
+
+			LA 		4,LINES
+			ZAP		DOBLE,INDEXL
+			MP 		DOBLE,=P'9'
+			CVB 	5,DOBLE
+			AR 		4,5
+
+			BCT 	12,FORNUM
+
+COPYLINE 	LA 		4,LINES
+			ZAP		DOBLE,INDEXL
+			MP 		DOBLE,=P'9'
+			CVB 	5,DOBLE
+			AR 		4,5
+
+			MVC 	0(9,4),LINEORD
+			MVC 	LINEORD,=CL9' '
+			AP 		INDEXL,=P'1'
+			CP 		INDEXL,LINCOUNT
+			BL 		OTRALIN2
+
+			WTO 	'Las estaciones se han agrupado en lineas :)'
+			B 		VOLVER
+
+**********************************************************************
+OPCION4 	WTO 	'Lineas: '
+			LA 		4,LINES
+			LA 		5,9
+OTRALINE	MVC 	WTOLINEA(9),0(4)
+			LA 		4,9(4)
+			WTO 	MF=(E,WTOBLOCK)
+
+			BCT 	5,OTRALINE
+			B 		VOLVER
+
+
+**********************************************************************
+**********************************************************************
+*							 SUBRUTINAS								 *
+**********************************************************************
+**********************************************************************
+*Agrega un tramo a la lista de tramos
+*Params: STATION1, STATION2
+ADDDATA 	LA 		4,SECTIONS
+			ZAP		DOBLE,INDEXS
+			MP 		DOBLE,=P'2'
+			CVB		5,DOBLE
+			AR 		4,5
+
+			MVC 	0(1,4),STATION1
+			MVC 	1(1,4),STATION2
+			AP 		INDEXS,=P'1'
+			BR 		12
+
+*Agrega las 2 estaciones del tramo a una linea
+*Params: INDEXS section, INDEXL linea
+ADDSECTN	LA 		8,SECTIONS
+			ZAP 	DOBLE,INDEXS
+			MP 		DOBLE,=P'2'
+			CVB 	5,DOBLE
+			AR 		8,5		
+
+			BAL 	11,GETLINE
+			BAL 	11,ADDINLIN
+
+			BAL 	11,GETLINE
+			LA 		4,1(4)
+			LA 		8,1(8)
+			BAL 	11,ADDINLIN
+
+			BR 		12
+
+*Agrega una estacion a una linea
+*Params: R8 station, INDEXL linea
+ADDSTATN 	LA 		7,SECTIONS
+			ZAP 	DOBLE,INDEXS
+			CVB 	5,DOBLE
+			MP 		DOBLE,=P'2'
+			AR 		7,5
+		
+			BAL 	11,GETLINE
+			BAL 	11,ADDINLIN
+			BR 		12
+
+			
+
+*Verifica si una estacion esta en una linea
+*Params: R8 station, INDEXL linea
+*Return: RESULT resultado
+CONTAIN 	BAL 	11,GETLINE
+			LA 		7,9
+LOOPCONT 	CLC 	0(1,4),=P'0'
+			BE 		NOESTAEN
+
+			CLC 	0(1,4),0(8)
+			BE 		ESTAEN
+			LA 		4,1(4)
+			BCT 	7,LOOPCONT
+NOESTAEN	MVI 	RESULT,C'F'
+			BR 		12
+ESTAEN 		MVI 	RESULT,C'T'
+			BR 		12
+
+
+
+*Procesa el agregado y mergeo de lineas
+*Params: R8 station, INDEXL linea
+ACTION 		MVI 	EQUALINX,C'F'
+
+**recorro todas las lineas
+			ZAP 	AUXIND,INDEXL
+			ZAP 	INDEXL2,=P'0'
+FORLINE2	ZAP 	INDEXL,INDEXL2
+			BAL 	12,CONTAIN
+			CLI 	RESULT,C'F'
+			BE 		JUMP3
+			CLC 	INDEXL,AUXIND
+			BE 		JUMP4
+
+**mergeo de Lineas
+			LA 		4,LINES
+			ZAP		DOBLE,AUXIND
+			MP 		DOBLE,=P'9'
+			CVB 	5,DOBLE
+			AR 		4,5
+
+			LA 		10,9
+FORMERG		CLI 	0(4),C' '
+			BE 		FINFORMG
+			LA 		4,1(4)
+			BCT 	10,FORMERG
+
+FINFORMG	LA 		7,LINES
+			ZAP		DOBLE,INDEXL2
+			MP 		DOBLE,=P'9'
+			CVB 	5,DOBLE
+			AR 		7,5
+
+			LA 		10,9
+FORMERG2	CLI 	0(7),C' '
+			BE 		DOWNLINE
+
+			MVC 	0(1,4),0(7)
+			MVI 	0(7),C' '
+
+			LA 		4,1(4)
+			LA 		7,1(7)
+			BCT 	10,FORMERG2
+
+***
+DOWNLINE 	LA 		7,LINES
+			ZAP		DOBLE,INDEXL2
+			MP 		DOBLE,=P'9'
+			CVB 	5,DOBLE
+			AR 		7,5
+			
+FORMERGD	CP 		INDEXL2,LINCOUNT
+			BE 		FINFORMD
+			MVC 	0(9,7),9(7)
+			BCT 	10,FORMERGD
+
+FINFORMD	SP 		LINCOUNT,=P'1'
+			B 		JUMP3
+**
+
+JUMP4 		MVI 	EQUALINX,C'T'
+JUMP3		AP 		INDEXL2,=P'1'
+			CP 		INDEXL2,LINCOUNT
+			BL 		FORLINE2
+
+			CLI 	EQUALINX,C'T'
+			BE 		FINACTN
+
+			ZAP 	INDEXL,AUXIND
+			BAL 	12,ADDSTATN
+
+FINACTN		ZAP 	INDEXL,AUXIND
+			MVI 	ISINLINE,C'T'
+			BR 		9
+
+
+
+*Obtener tramo
+*Params: INDEXS tramo
+*Return: R4 dir tramo obtenida
+GETSECTN 	LA 		4,SECTIONS
+			ZAP		DOBLE,INDEXS
+			MP 		DOBLE,=P'2'
+			CVB 	5,DOBLE
+			AR 		4,5
+			BR  	11
+
+*Obtener linea
+*Params: INDEXL linea
+*Return: R4 dir linea obtenida
+GETLINE 	LA 		4,LINES
+			ZAP		DOBLE,INDEXL
+			MP 		DOBLE,=P'9'
+			CVB 	5,DOBLE
+			AR 		4,5
+			BR  	11
+
+*Agrega una estacion a una linea
+*Params: R4 linea actual, R8 station
+ADDINLIN 	LA 		10,9
+FORADDLI	CLI 	0(4),C' '
+			BE 		FINFORLI
+			LA 		4,1(4)
+			BCT 	10,FORADDLI
+FINFORLI	MVC 	0(1,4),0(8)
+			BR 		11
+
+
+**********************************************************************
+**********************************************************************
+*							  VARIABLES								 *
+**********************************************************************
+**********************************************************************
+CANTWTO 	DC 		CL1''
+SECTWTO 	DC 		CL3''
+
+STATIONS 	DC 		CL1'9'
+SECTIONS 	DC 		CL18'8136491727145419  '
+LINES 		DC 		9CL9''
+LINEORD 	DC 		CL9''
+
+SECCOUNT 	DC 		PL1'0'
+LINCOUNT 	DC 		PL1'0'
+
+STATION1 	DS 		CL1
+STATION2 	DS 		CL1
+
+ISINLINE	DS 		CL1
+RESULT 		DS 		CL1
+EQUALINX 	DS 		CL1
+
+**********************************************************************
+DOBLE		DS		D 			*Aux para multiplicar y dividir
+INDEXS 		DC 		PL1'8'
+INDEXL	 	DS 		PL1
+INDEXL2	 	DS 		PL1
+INDEXR		DS 		PL1
+AUXIND		DS 		PL1 		*Aux para guardar INDEXL
+AUXLINE 	DS 		PL1
+
+**********************************************************************
+OPCION 		DS 		CL1
+DATO 		DC		CL4''
+
+NUMEROS		DC		C'123456789'
+WAITECB 	DC		F'0'
+
+WTOBLOCK	DC		H'24'
+			DC		H'0'
+WTOLINEA	DC		CL20''
+
+			END
